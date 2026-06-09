@@ -1,0 +1,13 @@
+# nixpacks.toml — Railway build config
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "chromium"]  # Chromium needed for Puppeteer PDF
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npx prisma generate"]
+
+[start]
+cmd = "npx prisma migrate deploy && node src/app.js"

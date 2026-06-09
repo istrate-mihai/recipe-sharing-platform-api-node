@@ -1,0 +1,162 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  name               String
+  email              String    @unique
+  emailVerifiedAt    DateTime? @map("email_verified_at")
+  password           String
+  avatar             String?
+  bio                String?
+  rememberToken      String?   @map("remember_token")
+  stripeCustomerId   String?   @map("stripe_customer_id")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  recipes        Recipe[]
+  likes          Like[]
+  favourites     Favourite[]
+  collections    Collection[]
+  subscriptions  Subscription[]
+
+  @@map("users")
+}
+
+model Recipe {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @map("user_id")
+  status          String    @default("published") // published | draft | private
+  title           String
+  description     String    @db.Text
+  category        String
+  difficulty      String    // easy | medium | hard
+  prepTime        Int       @map("prep_time")
+  cookTime        Int       @map("cook_time")
+  servings        Int?      @default(4)
+  steps           Json      // string[]
+  likesCount      Int       @default(0) @map("likes_count")
+  nutritionalInfo Json?     @map("nutritional_info")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients Ingredient[]
+  images      RecipeImage[]
+  likes       Like[]
+  favourites  Favourite[]
+  collections CollectionRecipe[]
+
+  @@map("recipes")
+}
+
+model Ingredient {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int      @map("recipe_id")
+  quantity  Float?
+  unit      String?  @db.VarChar(50)
+  name      String   @db.VarChar(255)
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("ingredients")
+}
+
+model RecipeImage {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int      @map("recipe_id")
+  path      String
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_images")
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  recipeId  Int      @map("recipe_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@map("likes")
+}
+
+model Favourite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  recipeId  Int      @map("recipe_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@map("favourites")
+}
+
+model Collection {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  name        String
+  description String?  @db.Text
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipes CollectionRecipe[]
+
+  @@map("collections")
+}
+
+model CollectionRecipe {
+  id           Int      @id @default(autoincrement())
+  collectionId Int      @map("collection_id")
+  recipeId     Int      @map("recipe_id")
+  order        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, recipeId])
+  @@map("collection_recipe")
+}
+
+model Subscription {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @map("user_id")
+  stripeId         String    @unique @map("stripe_id")
+  stripeCustomerId String    @map("stripe_customer_id")
+  stripePriceId    String    @map("stripe_price_id")
+  status           String    // active | trialing | past_due | canceled | incomplete
+  endsAt           DateTime? @map("ends_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
