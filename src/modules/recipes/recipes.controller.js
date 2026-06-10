@@ -112,7 +112,7 @@ export async function store(req, res) {
 
   // Handle image uploads
   if (req.files?.length) {
-    await syncImages(recipe.id, req.files, req.body.image_ids ?? []);
+    await syncImages(recipe.id, req.files, req.imageIds ?? []);
   }
 
   const full = await prisma.recipe.findUnique({
@@ -198,8 +198,8 @@ export async function update(req, res) {
   }
 
   // Sync images if any new uploads
-  if (req.files?.length || req.body.image_ids) {
-    await syncImages(recipe.id, req.files ?? [], req.body.image_ids ?? []);
+  if (req.files?.length || req.imageIds) {
+    await syncImages(recipe.id, req.files ?? [], req.imageIds ?? []);
   }
 
   const full = await prisma.recipe.findUnique({
