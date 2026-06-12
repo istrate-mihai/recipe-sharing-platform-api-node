@@ -101,7 +101,7 @@ export async function store(req, res) {
       nutritionalInfo: parsedNutri,
       ingredients: {
         create: parsedIngredients.map((ing, i) => ({
-          quantity: ing.quantity ?? null,
+          quantity: ing.quantity !== "" && ing.quantity != null ? parseFloat(ing.quantity) : null,
           unit:     ing.unit ?? null,
           name:     ing.name,
           order:    i,
@@ -189,7 +189,7 @@ export async function update(req, res) {
     await prisma.ingredient.createMany({
       data: parsedIngredients.map((ing, i) => ({
         recipeId: recipe.id,
-        quantity: ing.quantity ?? null,
+        quantity: ing.quantity !== "" && ing.quantity != null ? parseFloat(ing.quantity) : null,
         unit:     ing.unit ?? null,
         name:     ing.name,
         order:    i,
