@@ -198,7 +198,7 @@ export async function update(req, res) {
   }
 
   // Sync images if any new uploads
-  if (req.files?.length || req.imageIds) {
+  if (req.files?.length || req.imageIds?.length) {
     await syncImages(recipe.id, req.files ?? [], req.imageIds ?? []);
   }
 
