@@ -1,8 +1,9 @@
 // src/modules/recipes/pdf.js
-// Uses Puppeteer to render HTML → PDF, same as Laravel's DomPDF blade template.
-// Puppeteer is heavier than DomPDF but produces better output and needs no PHP.
+// Uses puppeteer-core + @sparticuz/chromium — works on serverless/Render free tier.
+// Full puppeteer would try to download Chrome at build time and fail.
 
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 /**
  * @param {object} recipe - Prisma recipe with user, ingredients, images
@@ -13,8 +14,10 @@ export async function generateRecipePdf(recipe, imageData) {
   const html = buildHtml(recipe, imageData);
 
   const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args:            chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath:  await chromium.executablePath(),
+    headless:        chromium.headless,
   });
 
   try {
@@ -22,8 +25,8 @@ export async function generateRecipePdf(recipe, imageData) {
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
     const buffer = await page.pdf({
-      format:            'A4',
-      printBackground:   true,
+      format:          'A4',
+      printBackground: true,
       margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
     });
 
